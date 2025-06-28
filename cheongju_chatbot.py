@@ -8,7 +8,7 @@ from streamlit_folium import st_folium
 import pandas as pd
 
 # CSV 불러오기
-cafes_df = pd.read_csv("cj_cafe_place.csv", encoding="utf-8")
+cafes_df = pd.read_csv("cj_cafe_place.csv", encoding="cp949")
 
 
 client = OpenAI()
