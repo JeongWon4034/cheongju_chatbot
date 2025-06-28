@@ -17,7 +17,10 @@ def load_data():
 df = load_data()
 
 # 사용자가 입력한 관광지 찾기
-last_user_msg = st.session_state.messages[-1]["content"]
+if "messages" in st.session_state and st.session_state.messages:
+    last_user_msg = st.session_state.messages[-1]["content"]
+else:
+    last_user_msg = ""
 matched_rows = df[df["관광지"].str.contains(last_user_msg.strip(), case=False)]
 
 if not matched_rows.empty:
