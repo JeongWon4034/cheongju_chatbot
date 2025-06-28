@@ -1,15 +1,15 @@
 import streamlit as st
 import openai
 import os
-from dotenv import load_dotenv
 from geopy.geocoders import Nominatim
 import re
 import folium
 from streamlit_folium import st_folium
 
-# API 키 불러오기
-load_dotenv()
-openai.api_key = os.getenv("OPENAI_API_KEY")
+import streamlit as st
+import openai
+
+openai.api_key = st.secrets["OPENAI_API_KEY"]
 
 # 메시지 상태 초기화
 if "messages" not in st.session_state:
