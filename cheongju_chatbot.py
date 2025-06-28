@@ -6,28 +6,20 @@ import re
 import folium
 from streamlit_folium import st_folium
 import pandas as pd
+from geopy.distance import geodesic
 
 # CSV 불러오기 (한글 깨짐 방지)
 tour_df = pd.read_csv("cj_tour_place.csv", encoding="cp949")
 cafes_df = pd.read_csv("cj_cafe_place.csv", encoding="cp949")
 
-
-
-import streamlit as st
-import openai
-
-openai.api_key = st.secrets["OPENAI_API_KEY"]
-
-client = openai.OpenAI()
-
-
+client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
 # 메시지 상태 초기화
 if "messages" not in st.session_state:
     st.session_state.messages = [
-    {
-        "role": "system",
-        "content": """너는 청주 지역 문화유산 전문 관광 가이드야. 말투는 따뜻하고 친절하게, 마치 여행을 안내하는 가이드처럼 설명해줘.
+        {
+            "role": "system",
+            "content": """너는 청주 지역 문화유산 전문 관광 가이드야. 말투는 따뜻하고 친절하게, 마치 여행을 안내하는 가이드처럼 설명해줘.
 
 사용자가 여러 개의 청주 유적지(예: 상당산성, 청남대, 수암골 등)를 입력하면:
 
@@ -43,10 +35,8 @@ if "messages" not in st.session_state:
 
 친근하지만 정확하고 신뢰도 있는 정보를 제공해주는 게 중요해.
 """
-    }
-]
-
-
+        }
+    ]
 
 # 입력 상태 초기화
 if "user_input" not in st.session_state:
@@ -54,17 +44,8 @@ if "user_input" not in st.session_state:
 
 st.title("청주 문화 챗봇")
 
-# OpenAI 클라이언트 생성
-client = openai.OpenAI()
-
 # 입력창 + 버튼
 st.session_state.user_input = st.text_input("궁금한 걸 물어보세요!", value=st.session_state.user_input)
-
-
-
-
-##############
-
 
 if st.button("질문하기"):
     user_input = st.session_state.user_input
@@ -88,7 +69,6 @@ if st.button("질문하기"):
             st.session_state.messages.append({"role": "assistant", "content": reply})
 
         st.session_state.user_input = ""
-
 
 # 채팅 이력 출력
 for msg in st.session_state.messages[1:]:
