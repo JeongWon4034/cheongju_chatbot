@@ -76,12 +76,11 @@ with input_container:
             st.session_state.user_input = ""
 
 with chat_container:
-    for msg in st.session_state.messages[1:]:
+    for msg in reversed(st.session_state.messages[1:]):
         if msg["role"] == "user":
             st.markdown(f"<div style='text-align: right; background-color: #dcf8c6; border-radius: 10px; padding: 8px; margin: 5px 0;'>{msg['content']}</div>", unsafe_allow_html=True)
         elif msg["role"] == "assistant":
             st.markdown(f"<div style='text-align: left; background-color: #ffffff; border-radius: 10px; padding: 8px; margin: 5px 0;'>{msg['content']}</div>", unsafe_allow_html=True)
-
 
 
 
