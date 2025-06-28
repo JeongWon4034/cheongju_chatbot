@@ -61,7 +61,12 @@ if "messages" not in st.session_state:
 ##########################3
 
 
-# 입력 상태 초기화
+
+if "messages" not in st.session_state:
+    st.session_state.messages = [
+        {"role": "system", "content": "너는 청주 문화유산을 소개하는 따뜻하고 설레는 말투의 관광 가이드 챗봇이야."}
+    ]
+
 if "user_input" not in st.session_state:
     st.session_state.user_input = ""
 
@@ -88,14 +93,3 @@ if st.button("보내기"):
             reply = response.choices[0].message.content
             st.session_state.messages.append({"role": "assistant", "content": reply})
         st.session_state.user_input = ""
-
-
-
-
-AttributeError: This app has encountered an error. The original error message is redacted to prevent data leaks. Full error details have been recorded in the logs (if you're on Streamlit Cloud, click on 'Manage app' in the lower right of your app).
-Traceback:
-File "/mount/src/cheongju_chatbot1/cheongju_chatbot.py", line 20, in <module>
-    last_user_msg = st.session_state.messages[-1]["content"]
-                    ^^^^^^^^^^^^^^^^^^^^^^^^^
-File "/home/adminuser/venv/lib/python3.13/site-packages/streamlit/runtime/state/session_state_proxy.py", line 132, in __getattr__
-    raise AttributeError(_missing_attr_error_message(key))
