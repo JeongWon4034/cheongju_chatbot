@@ -3,42 +3,15 @@ from openai import OpenAI
 import re
 import pandas as pd
 
-# OpenAI 클라이언트 초기화 (스트림릿 시크릿 키 사용)
+
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
-
-
-
 
 @st.cache_data
 def load_data():
-    df = pd.read_csv("cj_data.csv")
+    df = pd.read_csv("cj_data.csv", encoding="utf-8-sig")
     return df
 
-df = load_data()
-
-# 사용자가 입력한 관광지 찾기
-if "messages" in st.session_state and st.session_state.messages:
-    last_user_msg = st.session_state.messages[-1]["content"]
-else:
-    last_user_msg = ""
-matched_rows = df[df["관광지"].str.contains(last_user_msg.strip(), case=False)]
-
-if not matched_rows.empty:
-    st.subheader("📍 주변 카페 추천")
-    for cafe in matched_rows["market"].unique():
-        sub_df = matched_rows[matched_rows["market"] == cafe]
-        sentiments = sub_df["sentiment"].value_counts().to_dict()
-        sample_reviews = sub_df["review"].tolist()[:2]
-
-        st.markdown(f"**☕ {cafe}**")
-        for review in sample_reviews:
-            st.write(f"📝 {review}")
-        st.write(f"감성 분석: 👍 {sentiments.get('positive', 0)} / 👎 {sentiments.get('nagative', 0)}")
-        st.write("---")
-
-
-
-
+cj_data = load_data()
 
 # 메시지 상태 초기화
 if "messages" not in st.session_state:
@@ -118,3 +91,11 @@ if st.button("보내기"):
 
 
 
+
+AttributeError: This app has encountered an error. The original error message is redacted to prevent data leaks. Full error details have been recorded in the logs (if you're on Streamlit Cloud, click on 'Manage app' in the lower right of your app).
+Traceback:
+File "/mount/src/cheongju_chatbot1/cheongju_chatbot.py", line 20, in <module>
+    last_user_msg = st.session_state.messages[-1]["content"]
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/home/adminuser/venv/lib/python3.13/site-packages/streamlit/runtime/state/session_state_proxy.py", line 132, in __getattr__
+    raise AttributeError(_missing_attr_error_message(key))
