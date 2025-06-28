@@ -1,8 +1,8 @@
 import streamlit as st
 from openai import OpenAI
 import os
+from geopy.distance import geodesic
 from geopy.geocoders import Nominatim
-import re
 import folium
 from streamlit_folium import st_folium
 import pandas as pd
@@ -11,57 +11,35 @@ import pandas as pd
 tour_df = pd.read_csv("cj_tour_place.csv", encoding="cp949")
 cafes_df = pd.read_csv("cj_cafe_place.csv", encoding="cp949")
 
-
 client = OpenAI()
-
-import streamlit as st
-import openai
 
 openai.api_key = st.secrets["OPENAI_API_KEY"]
 
-# 메시지 상태 초기화
 if "messages" not in st.session_state:
     st.session_state.messages = [
-    {
-        "role": "system",
-        "content": """너는 청주 지역 문화유산 전문 관광 가이드야. 말투는 따뜻하고 친절하게, 마치 여행을 안내하는 가이드처럼 설명해줘.
+        {
+            "role": "system",
+            "content": """너는 청주 지역 문화유산 전문 관광 가이드야. 말투는 따뜻하고 친절하게, 마치 여행을 안내하는 가이드처럼 설명해줘.
 
-사용자가 여러 개의 청주 유적지(예: 상당산성, 청남대, 수암골 등)를 입력하면:
+사용자가 여러 개의 청주 유적지를 입력하면:
 
 1. 각 유적지가 어떤 역사적·문화적 의미를 지니는지 소개해줘.
-2. 관광객이 방문할 때 알아두면 좋은 포인트도 함께 알려줘 (예: 풍경, 계절별 특징, 추천 포토스팟 등).
-3. 입력된 유적지들을 이동하기 편한 동선 순서로 정렬해줘. (예: 북쪽 → 남쪽, 가까운 순 등)
+2. 각 유적지 주변 5개의 가까운 카페를 부가적으로 알려줘 (위치기반).
+3. 입력된 유적지들을 이동하기 편한 동선 순서로 정렬해줘.
 
 ※ 장소 이름은 줄 바꿔서 명확하게 보여줘.
 ※ 동선은 리스트 형태로 순서를 매겨서 출력해줘.
-
-예시 말투:
-"첫 번째로 추천드릴 곳은 상당산성이에요! 청주의 대표적인 산성으로, 봄철 벚꽃과 함께 걷기 정말 좋아요~"
-
-친근하지만 정확하고 신뢰도 있는 정보를 제공해주는 게 중요해.
+※ 위도·경도 정보는 사용자에게 보여주지 마.
 """
-    }
-]
+        }
+    ]
 
-
-
-# 입력 상태 초기화
 if "user_input" not in st.session_state:
     st.session_state.user_input = ""
 
 st.title("청주 문화 챗봇")
 
-# OpenAI 클라이언트 생성
-client = openai.OpenAI()
-
-# 입력창 + 버튼
 st.session_state.user_input = st.text_input("궁금한 걸 물어보세요!", value=st.session_state.user_input)
-
-
-
-
-##############
-
 
 if st.button("질문하기"):
     user_input = st.session_state.user_input
@@ -72,11 +50,11 @@ if st.button("질문하기"):
             t_desc = f"{t_name}은 청주의 주요 유적지 중 하나입니다."
             t_loc = (t_row['위도'], t_row['경도'])
             cafes_df['거리'] = cafes_df.apply(lambda x: geodesic(t_loc, (x['위도'], x['경도'])).meters, axis=1)
-            nearby_cafes = cafes_df.sort_values('거리').head(3)
-            cafe_list = ", ".join(nearby_cafes['이름'].astype(str).tolist())
-            tour_info.append(f"{t_desc}\n주변 추천 카페: {cafe_list}")
+            nearby_cafes = cafes_df.sort_values('거리').head(5)
+            cafe_list = "\n".join(nearby_cafes['이름'].astype(str).tolist())
+            tour_info.append(f"{t_desc}\n주변 추천 카페 5곳:\n{cafe_list}")
 
-        combined_prompt = f"{user_input}\n\n아래는 청주 주요 유적지와 각 유적지 주변 추천 카페 정보입니다. 유적지를 중심으로 코스를 짜주고, 추가로 카페 정보도 안내해줘. 위도 경도 정보는 말하지 마.\n\n{chr(10).join(tour_info)}"
+        combined_prompt = f"{user_input}\n\n아래는 청주 주요 유적지 정보와 주변 추천 카페 5곳입니다. 각 유적지를 중심으로 코스를 짜주고 소개해줘. 위도 경도 정보는 말하지 마.\n\n{chr(10).join(tour_info)}"
 
         st.session_state.messages.append({"role": "user", "content": combined_prompt})
 
@@ -90,19 +68,12 @@ if st.button("질문하기"):
 
         st.session_state.user_input = ""
 
-
-
-
-
-
-# 채팅 이력 출력
 for msg in st.session_state.messages[1:]:
     if msg["role"] == "user":
         st.markdown(f"👤 **You**: {msg['content']}")
     else:
         st.markdown(f"🤖 **챗봇**: {msg['content']}")
 
-# 지도에 장소 마커 자동 표시
 if st.session_state.messages[-1]["role"] == "assistant":
     reply = st.session_state.messages[-1]["content"]
     place_pattern = [line.strip("-•● ").strip() for line in reply.split('\n') if line.strip()]
