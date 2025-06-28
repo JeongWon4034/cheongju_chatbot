@@ -25,8 +25,9 @@ st.session_state.user_input = st.text_input("궁금한 걸 물어보세요!", va
 
 if st.button("질문하기"):
     user_input = st.session_state.user_input
-    tour_info = []
     mentioned_places = [place for place in tour_df['이름'] if place in user_input]
+
+    tour_info = []
 
     if mentioned_places:
         for t_name in mentioned_places:
@@ -39,12 +40,12 @@ if st.button("질문하기"):
         sample_places = tour_df.head(3)['이름'].tolist()
         tour_info.append({"places": sample_places})
 
-    prompt = f"""사용자가 청주 여행 관련 질문을 했어: {user_input}
+    prompt = f"""사용자 요청: {user_input}
 
-추천 유적지/카페 리스트:
+추천 유적지 및 주변 카페 정보:
 {tour_info}
 
-이 정보를 토대로 따뜻하고 친절한 톤으로 추천 안내문을 만들어줘. 위도경도 정보는 말하지마."""
+위 내용을 바탕으로 친절하고 따뜻한 톤으로 안내 멘트를 만들어줘. 위도, 경도는 말하지 마."""
 
     with st.spinner("답변 작성 중..."):
         response = openai.ChatCompletion.create(
@@ -55,6 +56,7 @@ if st.button("질문하기"):
         st.markdown(reply)
 
     st.session_state.user_input = ""
+
 
 ######################
 
