@@ -6,7 +6,7 @@ import re
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
 # CSV 데이터 불러오기
-data = pd.read_csv("/mnt/data/data.csv", encoding="cp949")
+data = pd.read_csv("data.csv", encoding="cp949")
 
 
 
