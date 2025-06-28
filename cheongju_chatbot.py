@@ -83,13 +83,20 @@ for msg in st.session_state.messages[1:]:
 
 st.divider()
 user_input = st.text_input("메시지를 입력하세요")
+
+
 if st.button("보내기") and user_input:
     st.session_state.messages.append({"role": "user", "content": user_input})
-    matched = data[data['t_name'].str.contains(user_input, na=False)]
-    if not matched.empty:
-        cafes = matched[['c_name', 'c_review']].drop_duplicates().head(3)
-        cafe_info = "\n".join([f"- {row['c_name']}: {row['c_review']}" for _, row in cafes.iterrows()])
-        reply = f"{user_input}에 대한 설명과 함께 추천 카페:\n{cafe_info}"
-    else:
-        reply = f"죄송해요, {user_input}에 대한 정보가 없습니다."
-    st.session_state.messages.append({"role": "assistant", "content": reply})
+    with st.spinner("검색 중입니다..."):
+        matched = data[data['t_name'].str.contains(user_input, na=False)]
+        if not matched.empty:
+            cafes = matched[['c_name', 'c_review']].drop_duplicates().head(3)
+            cafe_info = "\n".join([f"- {row['c_name']}: {row['c_review']}" for _, row in cafes.iterrows()])
+            reply = f"{user_input}에 대한 설명과 함께 추천 카페:\n{cafe_info}"
+        else:
+            response = client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=st.session_state.messages
+            )
+            reply = response.choices[0].message.content
+        st.session_state.messages.append({"role": "assistant", "content": reply})
