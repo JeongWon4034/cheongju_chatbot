@@ -69,29 +69,27 @@ if "user_input" not in st.session_state:
 
 st.title("청주 문화 챗봇")
 
-input_container = st.container()
-chat_container = st.container()
+# 먼저 히스토리 출력
+for msg in st.session_state.messages[1:]:
+    if msg["role"] == "user":
+        st.markdown(f"<div style='text-align: right; background-color: #dcf8c6; border-radius: 10px; padding: 8px; margin: 5px 0;'>{msg['content']}</div>", unsafe_allow_html=True)
+    elif msg["role"] == "assistant":
+        st.markdown(f"<div style='text-align: left; background-color: #ffffff; border-radius: 10px; padding: 8px; margin: 5px 0;'>{msg['content']}</div>", unsafe_allow_html=True)
 
-with input_container:
-    user_input = st.text_input("메시지를 입력하세요", value=st.session_state.user_input, key="user_input_field")
-    if st.button("보내기"):
-        if user_input:
-            st.session_state.messages.append({"role": "user", "content": user_input})
-            with st.spinner("답변 작성 중..."):
-                response = client.chat.completions.create(
-                    model="gpt-3.5-turbo",
-                    messages=st.session_state.messages
-                )
-                reply = response.choices[0].message.content
-                st.session_state.messages.append({"role": "assistant", "content": reply})
-            st.session_state.user_input = ""
-
-with chat_container:
-    for msg in st.session_state.messages[1:]:
-        if msg["role"] == "user":
-            st.markdown(f"<div style='text-align: right; background-color: #dcf8c6; border-radius: 10px; padding: 8px; margin: 5px 0;'>{msg['content']}</div>", unsafe_allow_html=True)
-        elif msg["role"] == "assistant":
-            st.markdown(f"<div style='text-align: left; background-color: #ffffff; border-radius: 10px; padding: 8px; margin: 5px 0;'>{msg['content']}</div>", unsafe_allow_html=True)
+# 입력창과 버튼은 화면 맨 아래에 배치
+st.divider()
+user_input = st.text_input("메시지를 입력하세요", value=st.session_state.user_input, key="user_input_field")
+if st.button("보내기"):
+    if user_input:
+        st.session_state.messages.append({"role": "user", "content": user_input})
+        with st.spinner("답변 작성 중..."):
+            response = client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=st.session_state.messages
+            )
+            reply = response.choices[0].message.content
+            st.session_state.messages.append({"role": "assistant", "content": reply})
+        st.session_state.user_input = ""
 
 
 
