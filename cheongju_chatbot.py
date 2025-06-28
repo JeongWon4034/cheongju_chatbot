@@ -12,12 +12,10 @@ tour_df = pd.read_csv("cj_tour_place.csv", encoding="cp949")
 cafes_df = pd.read_csv("cj_cafe_place.csv", encoding="cp949")
 
 
-client = OpenAI()
 
-import streamlit as st
-import openai
+client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
-openai.api_key = st.secrets["OPENAI_API_KEY"]
+
 
 # 메시지 상태 초기화
 if "messages" not in st.session_state:
