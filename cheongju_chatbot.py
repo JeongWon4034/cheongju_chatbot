@@ -59,7 +59,11 @@ st.session_state.user_input = st.text_input("궁금한 걸 물어보세요!", va
 if st.button("질문하기"):
     user_input = st.session_state.user_input
     if user_input:
-        st.session_state.messages.append({"role": "user", "content": user_input})
+        # CSV 데이터 결합
+        cafe_info = "\n".join([f"{row['이름']} (경도: {row['경도']}, 위도: {row['위도']})" for idx, row in cafes_df.iterrows()])
+        combined_prompt = f"{user_input}\n\n청주 카페 데이터:\n{cafe_info}"
+
+        st.session_state.messages.append({"role": "user", "content": combined_prompt})
         with st.spinner("답변 작성 중..."):
             response = client.chat.completions.create(
                 model="gpt-3.5-turbo",
@@ -67,7 +71,7 @@ if st.button("질문하기"):
             )
             reply = response.choices[0].message.content
             st.session_state.messages.append({"role": "assistant", "content": reply})
-        st.session_state.user_input = ""  # 입력 초기화
+        st.session_state.user_input = ""
 
 
 # 채팅 이력 출력
