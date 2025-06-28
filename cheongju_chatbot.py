@@ -57,20 +57,28 @@ client = openai.OpenAI()
 # 입력창 + 버튼
 st.session_state.user_input = st.text_input("궁금한 걸 물어보세요!", value=st.session_state.user_input)
 
+
+
+
+##############
+
+
 if st.button("질문하기"):
     user_input = st.session_state.user_input
     if user_input:
         tour_info = []
         for idx, t_row in tour_df.iterrows():
             t_name = str(t_row['이름']).strip()
+            t_desc = f"{t_name}은 청주의 주요 유적지 중 하나입니다."
             t_loc = (t_row['위도'], t_row['경도'])
             cafes_df['거리'] = cafes_df.apply(lambda x: geodesic(t_loc, (x['위도'], x['경도'])).meters, axis=1)
             nearby_cafes = cafes_df.sort_values('거리').head(3)
-            cafe_list = "\n".join(nearby_cafes['이름'].astype(str).tolist())
-            tour_info.append(f"{t_name} 주변 추천 카페:\n{cafe_list}")
+            cafe_list = ", ".join(nearby_cafes['이름'].astype(str).tolist())
+            tour_info.append(f"{t_desc}\n주변 추천 카페: {cafe_list}")
 
-        combined_prompt = f"{user_input}\n\n{chr(10).join(tour_info)}"
-       st.session_state.messages.append({"role": "user", "content": combined_prompt})
+        combined_prompt = f"{user_input}\n\n아래는 청주 주요 유적지와 각 유적지 주변 추천 카페 정보입니다. 유적지를 중심으로 코스를 짜주고, 추가로 카페 정보도 안내해줘. 위도 경도 정보는 말하지 마.\n\n{chr(10).join(tour_info)}"
+
+        st.session_state.messages.append({"role": "user", "content": combined_prompt})
 
         with st.spinner("답변 작성 중..."):
             response = client.chat.completions.create(
@@ -81,6 +89,9 @@ if st.button("질문하기"):
             st.session_state.messages.append({"role": "assistant", "content": reply})
 
         st.session_state.user_input = ""
+
+
+
 
 
 
