@@ -6,13 +6,35 @@ import pandas as pd
 # OpenAI 클라이언트 초기화 (스트림릿 시크릿 키 사용)
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
-# CSV 데이터 불러오기
+
+
+
 @st.cache_data
 def load_data():
-    df = pd.read_csv("cj_data.csv", encoding="utf-8-sig")
+    df = pd.read_csv("cj_data.csv")
     return df
 
-cj_data = load_data()
+df = load_data()
+
+# 사용자가 입력한 관광지 찾기
+last_user_msg = st.session_state.messages[-1]["content"]
+matched_rows = df[df["관광지"].str.contains(last_user_msg.strip(), case=False)]
+
+if not matched_rows.empty:
+    st.subheader("📍 주변 카페 추천")
+    for cafe in matched_rows["market"].unique():
+        sub_df = matched_rows[matched_rows["market"] == cafe]
+        sentiments = sub_df["sentiment"].value_counts().to_dict()
+        sample_reviews = sub_df["review"].tolist()[:2]
+
+        st.markdown(f"**☕ {cafe}**")
+        for review in sample_reviews:
+            st.write(f"📝 {review}")
+        st.write(f"감성 분석: 👍 {sentiments.get('positive', 0)} / 👎 {sentiments.get('nagative', 0)}")
+        st.write("---")
+
+
+
 
 
 # 메시지 상태 초기화
