@@ -6,7 +6,13 @@ import pandas as pd
 # OpenAI 클라이언트 초기화 (스트림릿 시크릿 키 사용)
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
+# CSV 데이터 불러오기
+@st.cache_data
+def load_data():
+    df = pd.read_csv("cj_data.csv", encoding="utf-8-sig")
+    return df
 
+cj_data = load_data()
 
 
 # 메시지 상태 초기화
@@ -90,9 +96,3 @@ with chat_container:
 
 
 
-# 채팅 이력 출력
-for msg in st.session_state.messages[1:]:
-    if msg["role"] == "user":
-        st.markdown(f"👤 **You**: {msg['content']}")
-    else:
-        st.markdown(f"🤖 **챗봇**: {msg['content']}")
