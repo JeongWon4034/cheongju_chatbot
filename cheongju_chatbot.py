@@ -43,7 +43,6 @@ if st.button("질문하기"):
             reply = response.choices[0].message.content
             st.session_state.messages.append({"role": "assistant", "content": reply})
         st.session_state.user_input = ""  # 입력 초기화
-        st.experimental_rerun()
 
 
 # 채팅 이력 출력
