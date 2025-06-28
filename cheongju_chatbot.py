@@ -63,9 +63,15 @@ if "user_input" not in st.session_state:
 
 st.title("청주 문화 챗봇")
 
-chat_placeholder = st.empty()
-user_input = st.text_input("메시지를 입력하세요", value=st.session_state.user_input, key="user_input_field")
+# 채팅 히스토리 출력 (상단)
+for msg in st.session_state.messages[1:]:
+    if msg["role"] == "user":
+        st.markdown(f"<div style='text-align: right; background-color: #dcf8c6; border-radius: 10px; padding: 8px; margin: 5px 0;'>{msg['content']}</div>", unsafe_allow_html=True)
+    elif msg["role"] == "assistant":
+        st.markdown(f"<div style='text-align: left; background-color: #ffffff; border-radius: 10px; padding: 8px; margin: 5px 0;'>{msg['content']}</div>", unsafe_allow_html=True)
 
+# 입력창 (하단)
+user_input = st.text_input("메시지를 입력하세요", value=st.session_state.user_input, key="user_input_field")
 if st.button("보내기") and user_input:
     st.session_state.messages.append({"role": "user", "content": user_input})
     with st.spinner("답변 작성 중..."):
@@ -76,13 +82,6 @@ if st.button("보내기") and user_input:
         reply = response.choices[0].message.content
         st.session_state.messages.append({"role": "assistant", "content": reply})
     st.session_state.user_input = ""
-
-with chat_placeholder.container():
-    for msg in st.session_state.messages[1:]:
-        if msg["role"] == "user":
-            st.markdown(f"<div style='text-align: right; background-color: #dcf8c6; border-radius: 10px; padding: 8px; margin: 5px 0;'>{msg['content']}</div>", unsafe_allow_html=True)
-        elif msg["role"] == "assistant":
-            st.markdown(f"<div style='text-align: left; background-color: #ffffff; border-radius: 10px; padding: 8px; margin: 5px 0;'>{msg['content']}</div>", unsafe_allow_html=True)
 
 
 
