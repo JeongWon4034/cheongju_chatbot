@@ -7,7 +7,8 @@ import folium
 from streamlit_folium import st_folium
 import pandas as pd
 
-# CSV 불러오기
+# CSV 불러오기 (한글 깨짐 방지)
+tour_df = pd.read_csv("cj_tour_place.csv", encoding="cp949")
 cafes_df = pd.read_csv("cj_cafe_place.csv", encoding="cp949")
 
 
@@ -59,14 +60,18 @@ st.session_state.user_input = st.text_input("궁금한 걸 물어보세요!", va
 if st.button("질문하기"):
     user_input = st.session_state.user_input
     if user_input:
-        # CSV 데이터 결합
-        cafe_info = "\\n".join([
-    f"{row['이름']} (경도: {row['경도']}, 위도: {row['위도']})"
-    for idx, row in cafes_df.head(10).iterrows()
-])
-        combined_prompt = f"{user_input}\n\n청주 카페 데이터:\n{cafe_info}"
+        tour_info = []
+        for idx, t_row in tour_df.iterrows():
+            t_name = str(t_row['이름']).strip()
+            t_loc = (t_row['위도'], t_row['경도'])
+            cafes_df['거리'] = cafes_df.apply(lambda x: geodesic(t_loc, (x['위도'], x['경도'])).meters, axis=1)
+            nearby_cafes = cafes_df.sort_values('거리').head(3)
+            cafe_list = "\n".join(nearby_cafes['이름'].astype(str).tolist())
+            tour_info.append(f"{t_name} 주변 추천 카페:\n{cafe_list}")
 
-        st.session_state.messages.append({"role": "user", "content": combined_prompt})
+        combined_prompt = f"{user_input}\n\n{chr(10).join(tour_info)}"
+       st.session_state.messages.append({"role": "user", "content": combined_prompt})
+
         with st.spinner("답변 작성 중..."):
             response = client.chat.completions.create(
                 model="gpt-3.5-turbo",
@@ -74,7 +79,9 @@ if st.button("질문하기"):
             )
             reply = response.choices[0].message.content
             st.session_state.messages.append({"role": "assistant", "content": reply})
+
         st.session_state.user_input = ""
+
 
 
 # 채팅 이력 출력
