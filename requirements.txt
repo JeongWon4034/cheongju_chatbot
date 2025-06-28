@@ -3,3 +3,4 @@ openai
 geopy
 folium
 streamlit-folium
+pandas
