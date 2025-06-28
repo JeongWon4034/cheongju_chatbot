@@ -58,24 +58,29 @@ if "user_input" not in st.session_state:
 
 st.title("청주 문화 챗봇")
 
-user_input = st.text_input("궁금한 걸 물어보세요!", value=st.session_state.user_input)
+chat_container = st.container()
+input_container = st.container()
 
+with chat_container:
+    for msg in st.session_state.messages[1:]:
+        if msg["role"] == "user":
+            st.markdown(f"<div style='text-align: right; background-color: #dcf8c6; border-radius: 10px; padding: 8px; margin: 5px 0;'>{msg['content']}</div>", unsafe_allow_html=True)
+        else:
+            st.markdown(f"<div style='text-align: left; background-color: #ffffff; border-radius: 10px; padding: 8px; margin: 5px 0;'>{msg['content']}</div>", unsafe_allow_html=True)
 
-
-
-##############3
-
-if st.button("질문하기"):
-    if user_input:
-        st.session_state.messages.append({"role": "user", "content": user_input})
-        with st.spinner("답변 작성 중..."):
-            response = client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=st.session_state.messages
-            )
-            reply = response.choices[0].message.content
-            st.session_state.messages.append({"role": "assistant", "content": reply})
-        st.session_state.user_input = ""
+with input_container:
+    user_input = st.text_input("메시지를 입력하세요", value=st.session_state.user_input, key="user_input_field")
+    if st.button("보내기"):
+        if user_input:
+            st.session_state.messages.append({"role": "user", "content": user_input})
+            with st.spinner("답변 작성 중..."):
+                response = client.chat.completions.create(
+                    model="gpt-3.5-turbo",
+                    messages=st.session_state.messages
+                )
+                reply = response.choices[0].message.content
+                st.session_state.messages.append({"role": "assistant", "content": reply})
+            st.session_state.user_input = ""
 
 
 
