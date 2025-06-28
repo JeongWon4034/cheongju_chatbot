@@ -6,7 +6,7 @@ import pandas as pd
 
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
-data = pd.read_csv("cj_data_final.csv", encoding="utf-8-sig")
+data = pd.read_csv("./cj_data_final.csv", encoding="utf-8-sig")
 data = data.drop_duplicates()
 
 
