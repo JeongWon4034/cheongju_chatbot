@@ -31,35 +31,42 @@ if st.button("질문하기"):
     if mentioned_places:
         for t_name in mentioned_places:
             t_row = tour_df[tour_df['이름'] == t_name].iloc[0]
-            t_desc = f"{t_name}은 청주의 대표 유적지 중 하나입니다."
             t_loc = (t_row['위도'], t_row['경도'])
             cafes_df['거리'] = cafes_df.apply(lambda x: geodesic(t_loc, (x['위도'], x['경도'])).meters, axis=1)
-            nearby_cafes = cafes_df.sort_values('거리').head(5)
-            cafe_list = "\n".join(nearby_cafes['이름'].astype(str).tolist())
-            tour_info.append(f"{t_desc}\n주변 추천 카페 5곳:\n{cafe_list}")
+            nearby_cafes = cafes_df.sort_values('거리').head(5)['이름'].tolist()
+            tour_info.append({"place": t_name, "cafes": nearby_cafes})
     else:
-        sample_places = tour_df.head(3)
-        for idx, t_row in sample_places.iterrows():
-            t_name = t_row['이름']
-            t_desc = f"{t_name}은 청주의 대표 유적지 중 하나입니다."
-            tour_info.append(t_desc)
+        sample_places = tour_df.head(3)['이름'].tolist()
+        tour_info.append({"places": sample_places})
 
-    combined_prompt = f"{user_input}\n\n{chr(10).join(tour_info)}"
+    prompt = f"""사용자가 청주 여행 관련 질문을 했어: {user_input}
 
-    if len(combined_prompt) > 3000:
-        combined_prompt = combined_prompt[:3000]
+추천 유적지/카페 리스트:
+{tour_info}
 
-    st.session_state.messages.append({"role": "user", "content": combined_prompt})
+이 정보를 토대로 따뜻하고 친절한 톤으로 추천 안내문을 만들어줘. 위도경도 정보는 말하지마."""
 
     with st.spinner("답변 작성 중..."):
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
-            messages=st.session_state.messages
+            messages=[{"role": "user", "content": prompt}]
         )
         reply = response.choices[0].message.content
-        st.session_state.messages.append({"role": "assistant", "content": reply})
+        st.markdown(reply)
 
     st.session_state.user_input = ""
+
+######################
+
+
+
+
+
+
+
+
+
+
 
 for msg in st.session_state.messages[1:]:
     if msg["role"] == "user":
