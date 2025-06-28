@@ -5,6 +5,11 @@ from geopy.geocoders import Nominatim
 import re
 import folium
 from streamlit_folium import st_folium
+import pandas as pd
+
+# CSV 불러오기
+cafes_df = pd.read_csv("cj_cafe_place.csv")
+
 
 client = OpenAI()
 
