@@ -6,8 +6,7 @@ import pandas as pd
 # OpenAI 클라이언트 초기화 (스트림릿 시크릿 키 사용)
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
-# CSV 데이터 불러오기
-data = pd.read_csv("cj_data.csv", encoding="utf-8-sig")
+
 
 
 # 메시지 상태 초기화
@@ -68,25 +67,16 @@ user_input = st.text_input("궁금한 걸 물어보세요!", value=st.session_st
 
 if st.button("질문하기"):
     if user_input:
-        reply_text = ""
-        for place in data['유적지'].unique():
-            if place in user_input:
-                reply_text += f"\n첫 번째로 추천드릴 곳은 {place}예요! 유적지 설명은 준비 중이에요~"
-                nearby_cafes = data[data['유적지'] == place].head(5)
-                reply_text += f"\n\n{place} 주변 추천 카페 Top 5:\n"
-                for _, row in nearby_cafes.iterrows():
-                    reply_text += f"- {row['카페명']}\n"
         st.session_state.messages.append({"role": "user", "content": user_input})
-        st.session_state.messages.append({"role": "assistant", "content": reply_text})
-
         with st.spinner("답변 작성 중..."):
             response = client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=st.session_state.messages
             )
-            final_reply = response.choices[0].message.content
-            st.session_state.messages.append({"role": "assistant", "content": final_reply})
+            reply = response.choices[0].message.content
+            st.session_state.messages.append({"role": "assistant", "content": reply})
         st.session_state.user_input = ""
+
 
 
 
