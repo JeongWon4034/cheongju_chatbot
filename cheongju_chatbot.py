@@ -1,6 +1,7 @@
 import streamlit as st
 from openai import OpenAI
 import re
+import pandas as pd
 
 # OpenAI 클라이언트 초기화 (스트림릿 시크릿 키 사용)
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
