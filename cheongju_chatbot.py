@@ -97,4 +97,3 @@ if st.session_state.messages[-1]["role"] == "assistant":
         folium.PolyLine(coords, color="blue", weight=3).add_to(m)
 
     st_folium(m, width=700, height=500)
-csv 불러오는거 어디다해야돼 맨 앞?
