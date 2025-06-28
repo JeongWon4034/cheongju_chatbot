@@ -1,11 +1,12 @@
-client = openai.OpenAI()
 import streamlit as st
-import openai
+from openai import OpenAI
 import os
 from geopy.geocoders import Nominatim
 import re
 import folium
 from streamlit_folium import st_folium
+
+client = OpenAI()
 
 import streamlit as st
 import openai
