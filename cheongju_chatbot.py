@@ -13,7 +13,12 @@ cafes_df = pd.read_csv("cj_cafe_place.csv", encoding="cp949")
 
 
 
-client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+import streamlit as st
+import openai
+
+openai.api_key = st.secrets["OPENAI_API_KEY"]
+
+client = openai.OpenAI()
 
 
 
