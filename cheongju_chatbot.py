@@ -38,6 +38,11 @@ if "messages" not in st.session_state:
   - 예: “이곳에서 도보 5분 이내에 *카페 청춘*이 있어요. ‘커피가 너무 맛있다’는 리뷰가 많고 전반적으로 긍정적이네요!” 😊
 - 카페 정보는 인터넷에서 직접 조사하지 말고, 시스템이 준 CSV 데이터만 사용해줘.
 
+[카페 관련 주의사항 ❌]
+- GPT 너는 주변 카페를 임의로 추천하거나 언급하지 마.
+- GPT 너는 직접 조사하거나 카페를 언급하지 마.
+- 카페 정보는 별도로 시스템(csv 파일)에서 처리하니까 절대 언급하지 말고, 소개하지도 마.
+
 [요약]
 • 먼저 날씨를 미리 안내해줘.  
 • 관광지 설명은 굵은 글씨 + 감성적이고 여행 가이드 느낌으로.  
@@ -76,12 +81,12 @@ with input_container:
             st.session_state.user_input = ""
 
 with chat_container:
-    for msg in reversed(st.session_state.messages[1:]):
-        if msg["role"] == "user":
-            st.markdown(f"<div style='text-align: right; background-color: #dcf8c6; border-radius: 10px; padding: 8px; margin: 5px 0;'>{msg['content']}</div>", unsafe_allow_html=True)
-        elif msg["role"] == "assistant":
-            st.markdown(f"<div style='text-align: left; background-color: #ffffff; border-radius: 10px; padding: 8px; margin: 5px 0;'>{msg['content']}</div>", unsafe_allow_html=True)
-
+    if len(st.session_state.messages) >= 3:
+        for msg in reversed(st.session_state.messages[-2:]):
+            if msg["role"] == "user":
+                st.markdown(f"<div style='text-align: right; background-color: #dcf8c6; border-radius: 10px; padding: 8px; margin: 5px 0;'>{msg['content']}</div>", unsafe_allow_html=True)
+            elif msg["role"] == "assistant":
+                st.markdown(f"<div style='text-align: left; background-color: #ffffff; border-radius: 10px; padding: 8px; margin: 5px 0;'>{msg['content']}</div>", unsafe_allow_html=True)
 
 
 
