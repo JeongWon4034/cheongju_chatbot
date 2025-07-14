@@ -1,10 +1,10 @@
-import openai
-openai.api_key = st.secrets["OPENAI_API_KEY"]
 import streamlit as st
 import pandas as pd
 import requests
 import re
 
+import openai
+openai.api_key = st.secrets["OPENAI_API_KEY"]
 
 
 # CSV 데이터 로드
