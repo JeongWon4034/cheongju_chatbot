@@ -1,80 +1,57 @@
 import streamlit as st
-from openai import OpenAI
-import re
 import pandas as pd
+import requests
+import re
+from openai import OpenAI
 
-
+# GPT Key
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
-data = pd.read_csv("./cj_data_final.csv", encoding="cp949")
-data = data.drop_duplicates()
+# CSV 데이터 로드
+data = pd.read_csv("cj_data_final.csv", encoding="cp949").drop_duplicates()
 
+# 카페 포맷 함수 (카페별 최대 2~3개 리뷰만, 없으면 생략 또는 메시지 출력)
+def format_cafes(cafes_df):
+    cafes_df = cafes_df.drop_duplicates(subset=['c_name', 'c_value', 'c_review'])
+    result = []
 
+    if len(cafes_df) == 0:
+        return ("☕ 현재 이 관광지 주변에 등록된 카페 정보는 없어요.  \n"
+                "하지만 근처에 숨겨진 보석 같은 공간이 있을 수 있으니,  \n"
+                "지도를 활용해 천천히 걸어보시는 것도 추천드립니다 😊")
 
-# 메시지 상태 초기화
+    elif len(cafes_df) == 1:
+        row = cafes_df.iloc[0]
+        if all(x not in row["c_review"] for x in ["없음", "없읍"]):
+            return f"""☕ **주변 추천 카페**\n\n- **{row['c_name']}** (⭐ {row['c_value']})  \n“{row['c_review']}”"""
+        else:
+            return f"""☕ **주변 추천 카페**\n\n- **{row['c_name']}** (⭐ {row['c_value']})"""
+
+    else:
+        grouped = cafes_df.groupby(['c_name', 'c_value'])
+        result.append("☕ **주변에 이런 카페들이 있어요** 🌼\n")
+        for (name, value), group in grouped:
+            reviews = group['c_review'].dropna().unique()
+            reviews = [r for r in reviews if all(x not in r for x in ["없음", "없읍"])]
+            top_reviews = reviews[:3]
+
+            if top_reviews:
+                review_text = "\n".join([f"“{r}”" for r in top_reviews])
+                result.append(f"- **{name}** (⭐ {value})  \n{review_text}")
+            else:
+                result.append(f"- **{name}** (⭐ {value})")
+
+        return "\n\n".join(result)
+
+# 초기 세션 설정
 if "messages" not in st.session_state:
     st.session_state.messages = [
-        {
-            "role": "system",
-            "content": """ 너는 청주 문화유산을 친절하고 설레는 말투로 소개하는 관광 가이드 챗봇이야.
-
-먼저 현재 청주의 날씨 정보를 바탕으로 간단히 소개해줘.  
-예: “오늘 청주는 맑고 따뜻하네요 ☀️ 나들이하기 딱 좋은 날이에요.”  
-또는 “오늘은 비가 내려요 ☔ 우산 챙기시고, 미끄러운 길 조심하세요!”  
-그런 다음 관광지 설명으로 자연스럽게 넘어가줘.
-[안내 방식]
-- 사용자가 입력한 각 관광지는 굵고 크게 강조해줘 (예: 🏛️ 정북동 토성).
-- 각 관광지 설명 전에는 날씨를 간단히 언급하고,  
-  예: “강한 바람이 부는 날에는 따뜻한 겉옷 챙기시면 좋아요.” 같은 팁도 포함해줘.
-- 소개할 때는 다음 요소들을 포함해줘:
-  - 역사적 배경, 특징, 의미
-  - 여행자가 유용하게 알 수 있는 팁
-  - 주변 자연경관이나 분위기를 감성적으로 표현
-- 설명은 문단마다 줄바꿈해줘서 가독성을 높여줘.
-- 이모티콘 🎯 🏞️ ☕ 🌸 등을 자연스럽게 사용해서 생동감을 더하고,  
-  말투는 밝고 친근하게, 여행 가이드처럼 활기차고 설레는 느낌이어야 해.
-
-
-[카페 관련 주의사항 ❌]
-- GPT 너는 주변 카페를 임의로 추천하거나 언급하지 마.
-- GPT 너는 직접 조사하거나 카페를 언급하지 마.
-- 카페 정보는 별도로 시스템(csv 파일)에서 처리하니까 절대 언급하지 말고, 소개하지도 마.
-
-
-[카페 안내 연동 방식]
-- 관광지 주변 카페 정보(이름, 리뷰, 감성분석 등)는 시스템이 CSV 기반으로 매칭해줄 거야.
-- GPT 너는 그 데이터를 바탕으로 주변 카페 자연스럽게 말로 소개해줘.
-  - 예: “이곳에서 도보 5분 이내에 *카페 청춘*이 있어요. ‘커피가 너무 맛있다’는 리뷰가 많고 전반적으로 긍정적이네요!” 😊
-- 카페 정보는 인터넷에서 직접 조사하지 말고, 시스템이 준 CSV 데이터만 사용해.
-
-
-
-[요약]
-• 먼저 날씨를 미리 안내해줘.  
-• 관광지 설명은 굵은 글씨 + 감성적이고 여행 가이드 느낌으로.  
-• 이후 정확히 시스템에서 제공된 카페 정보로 말로 추천과 리뷰 요약 해줘. 
-"""
-        }
+        {"role": "system", "content": "당신은 청주 문화유산을 소개하는 감성적이고 공손한 말투의 관광 가이드 챗봇입니다."}
     ]
 
+st.title("🏞️ 청주 문화 관광가이드 🏞️")
 
-
-
-##########################3
-
-
-
-if "messages" not in st.session_state:
-    st.session_state.messages = [
-        {"role": "system", "content": "너는 청주 문화유산을 소개하는 따뜻하고 설레는 말투의 관광 가이드 챗봇이야."}
-    ]
-
-if "user_input" not in st.session_state:
-    st.session_state.user_input = ""
-
-st.title("청주 문화 챗봇")
-
-# 채팅 히스토리 (위쪽)
+# 이전 메시지 출력
 for msg in st.session_state.messages[1:]:
     if msg["role"] == "user":
         st.markdown(f"<div style='text-align: right; background-color: #dcf8c6; border-radius: 10px; padding: 8px; margin: 5px 0;'>{msg['content']}</div>", unsafe_allow_html=True)
@@ -82,21 +59,80 @@ for msg in st.session_state.messages[1:]:
         st.markdown(f"<div style='text-align: left; background-color: #ffffff; border-radius: 10px; padding: 8px; margin: 5px 0;'>{msg['content']}</div>", unsafe_allow_html=True)
 
 st.divider()
-user_input = st.text_input("메시지를 입력하세요")
 
+# 입력 폼 처리
+with st.form("chat_form"):
+    user_input = st.text_input("지도에서 선택한 관광지들을 여기에 입력해주세요! ( 쉼표(,)로 구분해 주세요. 예: 청주 신선주, 청주 청녕각)")
+    submitted = st.form_submit_button("보내기")
 
-if st.button("보내기") and user_input:
+if submitted and user_input:
     st.session_state.messages.append({"role": "user", "content": user_input})
-    with st.spinner("검색 중입니다..."):
-        matched = data[data['t_name'].str.contains(user_input, na=False)]
-        if not matched.empty:
-            cafes = matched[['c_name', 'c_review']].drop_duplicates().head(3)
-            cafe_info = "\n".join([f"- {row['c_name']}: {row['c_review']}" for _, row in cafes.iterrows()])
-            reply = f"{user_input}에 대한 설명과 함께 추천 카페:\n{cafe_info}"
-        else:
-            response = client.chat.completions.create(
+
+    with st.spinner("청주의 아름다움을 정리 중입니다..."):
+        places = [p.strip() for p in user_input.split(',') if p.strip()]
+        response_blocks = []
+
+        # GPT 서론 생성 (날씨 + 꿀팁 + 감성)
+        weather_intro = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "당신은 청주 관광을 소개하는 감성적이고 공손한 여행 가이드입니다."},
+                {"role": "user", "content": "오늘 청주의 날씨, 추천 복장, 걷기 좋은 시간대, 소소한 여행 팁, 계절 분위기 등을 이모지와 함께 따뜻한 말투로 소개해 주세요. 관광지 소개 전 서론으로 쓸 내용입니다."}
+            ]
+        ).choices[0].message.content
+        response_blocks.append(f"\U0001F324️ {weather_intro}")
+
+        for place in places:
+            matched = data[data['t_name'].str.contains(place, na=False)]
+
+            gpt_place_response = client.chat.completions.create(
                 model="gpt-3.5-turbo",
-                messages=st.session_state.messages
-            )
-            reply = response.choices[0].message.content
-        st.session_state.messages.append({"role": "assistant", "content": reply})
+                messages=[
+                    {"role": "system", "content": "당신은 청주 문화유산을 소개하는 감성적이고 따뜻한 말투의 공손한 관광 가이드입니다. 이모지도 풍부하게 사용하세요."},
+                    {"role": "user", "content": f"""
+여행자에게 설렘이 느껴지도록, 따뜻하고 공손한 말투로 {place}를 소개해 주세요 ✨  
+✔️ 역사적인 배경,  
+✔️ 방문 시의 분위기와 계절의 어울림 🍃🌸  
+✔️ 인근 포토스팟 📸  
+✔️ 여행자에게 추천하는 감성적인 코멘트 🌿  
+문단마다 이모지를 활용해 생동감 있게 작성해 주세요. 줄바꿈도 적절히 해 주세요.
+"""}
+                ]
+            ).choices[0].message.content
+
+            if not matched.empty:
+                cafes = matched[['c_name', 'c_value', 'c_review']].drop_duplicates()
+                cafe_info = format_cafes(cafes)
+
+                t_value = matched['t_value'].dropna().unique()
+                if len(t_value) > 0:
+                    score_text = f"\n\n📊 **관광지 평점**: ⭐ {t_value[0]}"
+                else:
+                    score_text = ""
+
+                reviews = matched['t_review'].dropna().unique()
+                reviews = [r for r in reviews if all(x not in r for x in ["없음", "없읍"])]
+                if len(reviews) > 0:
+                    top_reviews = list(reviews)[:3]
+                    review_text = "\n".join([f"“{r}”" for r in top_reviews])
+                    review_block = f"\n\n💬 **방문자 리뷰 중 일부**\n{review_text}"
+                else:
+                    review_block = ""
+
+            else:
+                score_text = ""
+                review_block = ""
+
+                cafe_info = client.chat.completions.create(
+                    model="gpt-3.5-turbo",
+                    messages=[
+                        {"role": "system", "content": "당신은 청주 지역의 감성적인 관광 가이드입니다. 공손하고 따뜻한 말투로 주변 카페를 추천하세요."},
+                        {"role": "user", "content": f"{place} 주변에 어울리는 카페를 2~3곳 추천해 주세요. 이름, 분위기, 어떤 사람에게 잘 어울리는지 등을 감성적으로 설명해 주세요. 이모지와 줄바꿈도 사용해 주세요."}
+                    ]
+                ).choices[0].message.content
+
+            full_block = f"---\n\n<h2 style='font-size: 24px; font-weight: bold;'>🏛️ {place}</h2>{score_text}\n\n{gpt_place_response}{review_block}\n\n{cafe_info}"
+            response_blocks.append(full_block)
+
+        final_response = "\n\n".join(response_blocks)
+        st.session_state.messages.append({"role": "assistant", "content": final_response})
