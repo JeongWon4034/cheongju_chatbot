@@ -1,11 +1,11 @@
+import openai
+openai.api_key = st.secrets["OPENAI_API_KEY"]
 import streamlit as st
 import pandas as pd
 import requests
 import re
-from openai import OpenAI
 
-# GPT Key
-client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+
 
 # CSV 데이터 로드
 data = pd.read_csv("cj_data_final.csv", encoding="cp949").drop_duplicates()
@@ -73,7 +73,7 @@ if submitted and user_input:
         response_blocks = []
 
         # GPT 서론 생성 (날씨 + 꿀팁 + 감성)
-        weather_intro = client.chat.completions.create(
+        weather_intro = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
             messages=[
                 {"role": "system", "content": "당신은 청주 관광을 소개하는 감성적이고 공손한 여행 가이드입니다."},
@@ -85,7 +85,7 @@ if submitted and user_input:
         for place in places:
             matched = data[data['t_name'].str.contains(place, na=False)]
 
-            gpt_place_response = client.chat.completions.create(
+            gpt_place_response = openai.ChatCompletion.create(
                 model="gpt-3.5-turbo",
                 messages=[
                     {"role": "system", "content": "당신은 청주 문화유산을 소개하는 감성적이고 따뜻한 말투의 공손한 관광 가이드입니다. 이모지도 풍부하게 사용하세요."},
