@@ -3,14 +3,13 @@ import pandas as pd
 import requests
 import re
 
-import openai
-openai.api_key = st.secrets["OPENAI_API_KEY"]
-
+from openai import OpenAI
+client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
 # CSV 데이터 로드
 data = pd.read_csv("cj_data_final.csv", encoding="cp949").drop_duplicates()
 
-# 카페 포맷 함수 (카페별 최대 2~3개 리뷰만, 없으면 생략 또는 메시지 출력)
+# 카페 포맷 함수
 def format_cafes(cafes_df):
     cafes_df = cafes_df.drop_duplicates(subset=['c_name', 'c_value', 'c_review'])
     result = []
@@ -72,8 +71,8 @@ if submitted and user_input:
         places = [p.strip() for p in user_input.split(',') if p.strip()]
         response_blocks = []
 
-        # GPT 서론 생성 (날씨 + 꿀팁 + 감성)
-        weather_intro = openai.ChatCompletion.create(
+        # GPT 서론 생성
+        weather_intro = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
                 {"role": "system", "content": "당신은 청주 관광을 소개하는 감성적이고 공손한 여행 가이드입니다."},
@@ -85,7 +84,7 @@ if submitted and user_input:
         for place in places:
             matched = data[data['t_name'].str.contains(place, na=False)]
 
-            gpt_place_response = openai.ChatCompletion.create(
+            gpt_place_response = client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=[
                     {"role": "system", "content": "당신은 청주 문화유산을 소개하는 감성적이고 따뜻한 말투의 공손한 관광 가이드입니다. 이모지도 풍부하게 사용하세요."},
@@ -105,10 +104,7 @@ if submitted and user_input:
                 cafe_info = format_cafes(cafes)
 
                 t_value = matched['t_value'].dropna().unique()
-                if len(t_value) > 0:
-                    score_text = f"\n\n📊 **관광지 평점**: ⭐ {t_value[0]}"
-                else:
-                    score_text = ""
+                score_text = f"\n\n📊 **관광지 평점**: ⭐ {t_value[0]}" if len(t_value) > 0 else ""
 
                 reviews = matched['t_review'].dropna().unique()
                 reviews = [r for r in reviews if all(x not in r for x in ["없음", "없읍"])]
@@ -118,12 +114,10 @@ if submitted and user_input:
                     review_block = f"\n\n💬 **방문자 리뷰 중 일부**\n{review_text}"
                 else:
                     review_block = ""
-
             else:
                 score_text = ""
                 review_block = ""
-
-                cafe_info = openai.ChatCompletion.create(
+                cafe_info = client.chat.completions.create(
                     model="gpt-3.5-turbo",
                     messages=[
                         {"role": "system", "content": "당신은 청주 지역의 감성적인 관광 가이드입니다. 공손하고 따뜻한 말투로 주변 카페를 추천하세요."},
