@@ -58,7 +58,7 @@ for msg in st.session_state.messages[1:]:
     elif msg["role"] == "assistant":
         st.markdown(f"<div style='text-align: left; background-color: #ffffff; border-radius: 10px; padding: 8px; margin: 5px 0;'>{msg['content']}</div>", unsafe_allow_html=True)
 
-st.divider()
+st.markdown("---")
 
 # 입력 폼 처리
 with st.form("chat_form"):
@@ -123,7 +123,7 @@ if submitted and user_input:
                 score_text = ""
                 review_block = ""
 
-                cafe_info = client.chat.completions.create(
+                cafe_info = openai.ChatCompletion.create(
                     model="gpt-3.5-turbo",
                     messages=[
                         {"role": "system", "content": "당신은 청주 지역의 감성적인 관광 가이드입니다. 공손하고 따뜻한 말투로 주변 카페를 추천하세요."},
